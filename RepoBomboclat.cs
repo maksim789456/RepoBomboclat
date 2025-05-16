@@ -18,6 +18,7 @@ public class RepoBomboclat : BaseUnityPlugin
     private static Harmony _harmony;
 
     internal static AudioClip BomboclatClip;
+    internal static ConfigEntry<bool> Enabled;
     internal static ConfigEntry<bool> OnlyOnLastExtract;
     internal static ConfigEntry<float> SurplusQuota;
 
@@ -25,11 +26,14 @@ public class RepoBomboclat : BaseUnityPlugin
     {
         Logger = BepInEx.Logging.Logger.CreateLogSource(MyPluginInfo.PLUGIN_GUID);
         Instance = this;
-        _harmony ??= new Harmony(MyPluginInfo.PLUGIN_GUID);
-        _harmony.PatchAll();
-
         Logger.LogInfo("Plugin RepoBomboclat is loaded!");
         GenerateConfig();
+
+        if (!Enabled.Value)
+            return;
+
+        _harmony ??= new Harmony(MyPluginInfo.PLUGIN_GUID);
+        _harmony.PatchAll();
 
         var path = ExtractEmbeddedAudio("RepoBomboclat.bomboclat.mp3");
         BomboclatClip = AudioClipLoader.Load(path);
@@ -37,10 +41,11 @@ public class RepoBomboclat : BaseUnityPlugin
 
     private void GenerateConfig()
     {
+        Enabled = Config.Bind("", "Enabled", true, "Enables trigger sound");
         OnlyOnLastExtract = Config.Bind("Trigger Options", "Only On Last Extract", true,
             new ConfigDescription("Trigger sound only at last extract point | Default True"));
-        SurplusQuota = Config.Bind("Trigger Options", "Surplus Quota", 100000f,
-            new ConfigDescription("The surplus value after which trigger sound | Default 100k"));
+        SurplusQuota = Config.Bind("Trigger Options", "Surplus Quota", 30000f,
+            new ConfigDescription("The surplus value after which trigger sound | Default 30k"));
     }
 
     [CanBeNull]
