@@ -42,6 +42,9 @@ jobs:
           mkdir -p Build
           cp LICENCE Build/
           cp CHANGELOG.md Build/
+          cp README.md Build/
+          cp manifest.json Build/
+          cp icon.png Build/
           cp ./bin/Release/netstandard2.1/${{env.MOD_NAME}}.dll Build/
 
       - name: Zip files
