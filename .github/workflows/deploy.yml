@@ -1,0 +1,85 @@
+name: Build and publish release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+env:
+  DOTNET_VERSION: "9.0.x"
+  MOD_NAME: "RepoBomboclat"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Install 7-Zip
+        run: |
+          sudo apt update
+          sudo apt-get -y install p7zip-full
+
+      - name: Extract Version from Tag
+        run: echo "VERSION=$(echo ${GITHUB_REF} | sed 's/refs\/tags\/v//')" >> $GITHUB_ENV
+
+      - name: Restore dependencies
+        run: dotnet restore .
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Copy build
+        run: |
+          mkdir -p Build
+          cp LICENCE Build/
+          cp CHANGELOG.md Build/
+          cp ./bin/Release/netstandard2.1/${{env.MOD_NAME}}.dll Build/
+
+      - name: Zip files
+        run: 7z a -tzip -mx=9 ./Releases/${{env.MOD_NAME}}_v${{ env.VERSION }}.zip ./Build/*
+
+      - name: Create GitHub Release
+        uses: elgohr/Github-Release-Action@v5
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag: ${{ github.ref_name }}
+          title: ${{env.MOD_NAME}} v${{ env.VERSION }}
+
+      - name: Create Release
+        uses: AButler/upload-release-assets@v3.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: "./Releases/${{env.MOD_NAME}}_v${{ env.VERSION }}.zip"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          release-tag: ${{ github.ref_name }}
+
+      - name: Publish artifact to Thunderstore
+        uses: GreenTF/upload-thunderstore-package@v4.3
+        with:
+          namespace: CapybaraEstTravy
+          description: Play 'Rich! Millionaire! Bomboclat!' meme sound at extraction point
+          token: ${{ secrets.THUNDERSTORE_TOKEN  }}
+          name: ${{env.MOD_NAME}}
+          version: ${{ env.VERSION }}
+          community: repo
+          deps: |
+            BepInEx-BepInExPack@5.4.2100
+          repo: thunderstore.io
+          categories: |
+            mods
+            clientside
+            audio
+            misc
+          website: https://github.com/maksim789456/${{env.MOD_NAME}}
+          file: ./Releases/${{env.MOD_NAME}}_v${{ env.VERSION }}.zip
