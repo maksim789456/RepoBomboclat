@@ -2,7 +2,7 @@
 
 Adding play [meme "Rich! Millionaire! Bomboclat!"](https://www.instagram.com/reel/C8lCplopVgE/) sound for extraction point
 
-By default it's playing only at last extraction point and if surplus (extra money) more **30k$**, but you can change it at config
+By default, it's playing at all extraction point and if surplus (extra money) more **10k$**, but you can change it at config
 
 ## Configuration
 - **Enabled**: Enabling playing sound at extraction points

@@ -42,10 +42,10 @@ public class RepoBomboclat : BaseUnityPlugin
     private void GenerateConfig()
     {
         Enabled = Config.Bind("", "Enabled", true, "Enables trigger sound");
-        OnlyOnLastExtract = Config.Bind("Trigger Options", "Only On Last Extract", true,
-            new ConfigDescription("Trigger sound only at last extract point | Default True"));
-        SurplusQuota = Config.Bind("Trigger Options", "Surplus Quota", 30000f,
-            new ConfigDescription("The surplus value after which trigger sound | Default 30k"));
+        OnlyOnLastExtract = Config.Bind("Trigger Options", "Only On Last Extract", false,
+            new ConfigDescription("Trigger sound only at last extract point | Default False"));
+        SurplusQuota = Config.Bind("Trigger Options", "Surplus Quota", 10000f,
+            new ConfigDescription("The surplus value after which trigger sound | Default 10k"));
     }
 
     [CanBeNull]
