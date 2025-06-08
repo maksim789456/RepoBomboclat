@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System.Reflection;
+using HarmonyLib;
+using UnityEngine;
 
 namespace RepoBomboclat;
 
@@ -8,6 +10,10 @@ public class ExtractPointBomboclat : MonoBehaviour
     private Sound _bomboclatSound;
 
     private bool _played;
+    private FieldInfo _haulSurplusField;
+    private FieldInfo _currentStateField;
+    private FieldInfo _extractionPointsCompletedField;
+    private FieldInfo _extractionPointsField;
 
     private void Start()
     {
@@ -16,11 +22,17 @@ public class ExtractPointBomboclat : MonoBehaviour
         {
             Sounds = [RepoBomboclat.BomboclatClip]
         };
+
+        _haulSurplusField = AccessTools.Field(typeof(ExtractionPoint), "haulSurplus");
+        _currentStateField = AccessTools.Field(typeof(ExtractionPoint), "currentState");
+        _extractionPointsCompletedField = AccessTools.Field(typeof(RoundDirector), "extractionPointsCompleted");
+        _extractionPointsField = AccessTools.Field(typeof(RoundDirector), "extractionPoints");
     }
 
     private void Update()
     {
-        if (_played && _extractionPoint.StateIs(ExtractionPoint.State.Cancel))
+        var currentState = (ExtractionPoint.State)_currentStateField.GetValue(_extractionPoint);
+        if (_played && currentState == ExtractionPoint.State.Cancel)
         {
             // Stop playing bomboclat if EP state changes to cancel (item destroy / leave EP)
             RepoBomboclat.Logger.LogInfo("Extraction point is cancel, stop bomboclat");
@@ -28,17 +40,20 @@ public class ExtractPointBomboclat : MonoBehaviour
             _bomboclatSound.Stop();
         }
 
-        if (!_extractionPoint.StateIs(ExtractionPoint.State.Surplus) || _played) return;
+        if (currentState != ExtractionPoint.State.Surplus || _played) return;
 
+        var haulSurplus = (int)_haulSurplusField.GetValue(_extractionPoint);
         if (RepoBomboclat.SurplusQuota.Value > 0.0f
-            && _extractionPoint.haulSurplus < RepoBomboclat.SurplusQuota.Value)
+            && haulSurplus < RepoBomboclat.SurplusQuota.Value)
             return;
 
-        RepoBomboclat.Logger.LogInfo("EP surplus is: " + _extractionPoint.haulSurplus);
+        RepoBomboclat.Logger.LogInfo("EP surplus is: " + haulSurplus);
 
         if (RepoBomboclat.OnlyOnLastExtract.Value)
         {
-            if (RoundDirector.instance.extractionPointsCompleted != RoundDirector.instance.extractionPoints - 1)
+            var extractionPointsCompleted = (int)_extractionPointsCompletedField.GetValue(_extractionPoint);
+            var extractionPoints = (int)_extractionPointsField.GetValue(_extractionPoint);
+            if (extractionPointsCompleted != extractionPoints - 1)
                 return;
 
             RepoBomboclat.Logger.LogInfo("Last extraction point at surplus, playing bomboclat");
